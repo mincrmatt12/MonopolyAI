@@ -6,6 +6,7 @@ import threading
 import queue
 import squares
 import math
+import functools
 
 pygame.init()
 q = queue.Queue()
@@ -29,7 +30,7 @@ class DisplayObj(object):
         self.window = pygame.display.set_mode([750, 750])  # type: pygame.Surface
         self.q = q
         self.bg = pygame.image.load("board.jpg")
-        self.input_state = None
+        self.input_state = 0
         self.result = queue.Queue()
         self.fnt = pygame.freetype.Font(None)
         self.temp_roll = 0
@@ -38,9 +39,21 @@ class DisplayObj(object):
 
         self.menu = Menu(self.window, collections.OrderedDict((
             ("Exit", exit),
-
-            ("Skip Turn", lambda: None))
-        ), self.fnt)
+            ("Edit player", collections.OrderedDict((
+                ("Edit properties", functools.partial(self.edit_player, 0)),
+                ("Edit houses", functools.partial(self.edit_player, 1)),
+                ("Edit position", functools.partial(self.edit_player, 2)),
+                ("Edit jail", functools.partial(self.edit_player, 3))
+            ))),
+            ("Edit AI", collections.OrderedDict((
+                ("Edit money", functools.partial(self.edit_ai, 0)),
+                ("Edit properties", functools.partial(self.edit_ai, 1)),
+                ("Edit houses", functools.partial(self.edit_ai, 2)),
+                ("Edit position", functools.partial(self.edit_ai, 3)),
+                ("Edit jail", functools.partial(self.edit_ai, 4))
+            ))),
+            ("Skip Turn", lambda: None)
+        )), self.fnt)
 
     def draw_playboard(self):
         self.window.fill((255, 255, 255))
@@ -104,26 +117,44 @@ class DisplayObj(object):
         self.q.put((1, str_, None))
 
     def roll(self):
+        while self.input_state != 0:
+            pass
         self.q.put((0, 1, None))
-        return self.result.get()
+        res = self.result.get()
+        if res is None: return self.roll()
+        return res
 
     def choice(self, prompt, maxnum):
+        while self.input_state != 0:
+            pass
         self.q.put((0, 2, (prompt, maxnum)))
-        return self.result.get()
+        res = self.result.get()
+        if res is None: return self.choice(prompt, maxnum)
+        return res
 
     def number(self, prompt):
+        while self.input_state != 0:
+            pass
         self.q.put((0, 3, (prompt,)))
-        return self.result.get()
+        res = self.result.get()
+        if res is None: return self.number(prompt)
+        return res
 
     def square(self, prompt):
+        while self.input_state != 0:
+            pass
         self.q.put((0, 4, (prompt,)))
-        return self.result.get()
+        res = self.result.get()
+        if res is None: return self.square(prompt)
+        return res
 
     def run(self):
         while True:
             if not self.q.empty():
                 r, d, asdf = q.get_nowait()
                 if r == 0:
+                    if self.input_state != 0:
+                        q.put((r, d, asdf))
                     self.input_state = d
                     self.input_payload = asdf
                 else:
@@ -143,7 +174,8 @@ class DisplayObj(object):
                     self.menu.input(event)
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F12:
-                        self.menu.up_()
+                        #self.result.put(None)
+                        #self.menu.up_()
                         continue
                     if self.input_state == 1:
                         k = pygame.key.name(event.key)
@@ -198,7 +230,8 @@ class DisplayObj(object):
             pygame.display.flip()
 
     def edit_player(self, param):
-        pass
+        if param == 2:
+            others_pos[self.number("Which player to modify?")] = self.square("Where to put them?")
 
     def edit_ai(self, param):
         pass

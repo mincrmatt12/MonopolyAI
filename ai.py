@@ -1,3 +1,5 @@
+import time
+
 import display
 import risk
 import squares
@@ -189,8 +191,7 @@ def myturn(roll=-1):
 
 def run_ai():
     while True:
-        try:
-            myturn()
+        myturn()
         for other in range(playercount):
             try:
                 otherturn(other)
@@ -198,6 +199,10 @@ def run_ai():
                 display.display.print(f"##### OH CRAP! Player {other} is no more! #####")
             except display.SkipTurn:
                 pass
+            display.display.print("you have 2 seconds to do menu stuff")
+            time.sleep(1)
+            display.display.print("you have 1 seconds to do menu stuff")
+            time.sleep(1)
 
 
 ai_t = threading.Thread(target=run_ai)
